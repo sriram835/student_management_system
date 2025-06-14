@@ -1,4 +1,5 @@
 #include "manager.h"
+#include <limits>
 
 std::vector<Student> Manager::students;
 
@@ -39,6 +40,8 @@ void Manager::addStudent(){
         std::string name;
         std::string id;
 
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
         std::cout << "Enter the student name: ";
         getline(std::cin, name);
         std::cout << std::endl;
@@ -67,6 +70,8 @@ void Manager::addCourse(){
 
     std::string course_name;
     int course_credits;
+
+    std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 
     std::cout << "Enter Course Name: ";
     getline(std::cin, course_name);
