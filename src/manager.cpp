@@ -1,11 +1,16 @@
 #include "manager.h"
 #include <limits>
+#include "database_manager.h"
 
 std::vector<Student> Manager::students;
+DB_Manager Manager::databaseManager;
 
 void Manager::execute(){
     std::string choices_details = "1. Add student\n2. Add a course to student\n3. Display the student details\n4. Exit\nEnter your Choice: ";
     int choice;
+	
+
+	databaseManager.getStudents();
 
     while (1){
         std::cout << choices_details;
@@ -50,8 +55,12 @@ void Manager::addStudent(){
         getline(std::cin, id);
         std::cout << std::endl;
         
-        students.push_back(Student(name,id));
+	Student student(name,id);
+	databaseManager.insertStudent(student);
+
+
         std::cout << "\n\nStudent added!\n" << std::endl;
+
 }
 
 void Manager::addCourse(){
@@ -70,8 +79,13 @@ void Manager::addCourse(){
 
     std::string course_name;
     int course_credits;
+	std::string course_id;
 
     std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+	std::cout << "Enter Course ID: ";
+	getline(std::cin, course_id);
+	std::cout << std::endl;
 
     std::cout << "Enter Course Name: ";
     getline(std::cin, course_name);
@@ -81,7 +95,7 @@ void Manager::addCourse(){
     std::cin >> course_credits;
     std::cout << std::endl;
     
-    students[index].addCourse(course_credits, course_name);
+    students[index].addCourse(course_credits, course_name, course_id);
     std::cout << "Course Added!" << std::endl;
 }
 

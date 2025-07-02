@@ -12,10 +12,10 @@ private:
 
 public:
     Student(std::string name, std::string id);
-    void addCourse(int credits, std::string name);
-    std::string getName();
-    std::vector<Course> getCourses();
-    std::string getId();
+    void addCourse(int credits, std::string name, std::string id);
+    std::string getName() const;
+    std::vector<Course> getCourses() const;
+    std::string getId() const;
 };
 
 #endif
