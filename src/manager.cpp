@@ -6,11 +6,11 @@ std::vector<Student> Manager::students;
 DB_Manager Manager::databaseManager;
 
 void Manager::execute(){
-    std::string choices_details = "1. Add student\n2. Add a course to student\n3. Display the student details\n4. Exit\nEnter your Choice: ";
+    std::string choices_details = "1. Add student\n2. Add a course to student\n3. Display the student details\n4. Delete Student\n5. Exit\n\nEnter your Choice: ";
     int choice;
 	
 
-	databaseManager.getStudents();
+	Manager::students = databaseManager.getStudents();
 
     while (1){
         std::cout << choices_details;
@@ -31,7 +31,10 @@ void Manager::execute(){
             displayDetails();
             break;
             
-        case 4:
+	case 4:
+		deleteStudent();
+		break;
+        case 5:
             return;
 
         default:
@@ -55,11 +58,9 @@ void Manager::addStudent(){
         getline(std::cin, id);
         std::cout << std::endl;
         
-	Student student(name,id);
-	databaseManager.insertStudent(student);
+	students.push_back(Student(name,id));
 
-
-        std::cout << "\n\nStudent added!\n" << std::endl;
+        std::cout << "\nStudent added!\n" << std::endl;
 
 }
 
@@ -68,11 +69,13 @@ void Manager::addCourse(){
     int index;
 
     for (Student student:students){
-        std::cout << count++ << "-------------------------------\n" << "Student Name: " << student.getName() << std::endl;
-        std::cout << "Student ID: " << student.getId() << "--------------------------------" << std::endl;
+        std::cout <<  "--------------------------------\n";
+	std::cout << "Index: " << count++ << "\n";
+	std::cout << "Student Name: " << student.getName() << std::endl;
+        std::cout << "Student ID: " << student.getId() << "\n--------------------------------\n";
     }
 
-    std::cout << "Enter the index of the student: ";
+    std::cout << "\nEnter the index of the student: ";
     std::cin >> index;
     std::cout << std::endl;
 
@@ -115,4 +118,36 @@ void Manager::displayDetails(){
         
         std::cout << "------------------------------" << std::endl;
     }
+
+	std::cout << "\n";
 }
+
+
+void Manager::deleteStudent(){
+    int count = 0;
+    int index;
+
+    for (Student student:students){
+        std::cout <<  "--------------------------------\n";
+	std::cout << "Index: " << count++ << "\n";
+	std::cout << "Student Name: " << student.getName() << std::endl;
+        std::cout << "Student ID: " << student.getId() << "\n--------------------------------\n";
+    }
+
+    std::cout << "\nEnter the index of the student you want to delete: ";
+    std::cin >> index;
+    std::cout << std::endl;
+
+	std::string student_id = students[index].getId();
+	databaseManager.deleteStudent(student_id);
+	students.erase(students.begin() + index);
+
+}
+
+
+Manager::~Manager(){
+	databaseManager.insertStudent(students);
+}
+
+
+

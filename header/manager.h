@@ -13,9 +13,11 @@ public:
     static std::vector<Student> students;
 	static DB_Manager databaseManager; 
     void execute();
+	~Manager();
     static void addStudent();
     static void addCourse();
     static void displayDetails();
+	static void deleteStudent();
 };
 
 #endif

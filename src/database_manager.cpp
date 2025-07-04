@@ -8,6 +8,8 @@
 DB_Manager::DB_Manager(){
 	//Initialize DB
 	this->rc = sqlite3_open("/home/ram/Sriram_Tatikonda/Sriram2/VS code projects/C++/student_management_system/database/test.db", &db);
+	sqlite3_exec(db, "PRAGMA foreign_keys = ON;", nullptr, nullptr, nullptr);
+
 	if (rc) {
 		std::cout << "ERR: Could not connect to database\n";
 	}
@@ -33,21 +35,12 @@ std::vector<Student> DB_Manager::getStudents(){
 		std::cout << err_message << std::endl;
 	}
 	else{
-		std::cout << "Students data successfully retrieved" << std::endl;
+		std::cout << "\nStudents data successfully retrieved" << "\n\n";
 	}
 
-	for (auto i:students){
-		std::cout << i.getId() << "\n";
-	}
 
 	DB_Manager::getCourses(&students);
 
-	for (auto student:students){
-		std::vector<Course> courses = student.getCourses();
-		for (auto course:courses){
-      			std::cout << course.getCourseId() << "\n";
-		}
-	}
 	
 	return students;
 }
@@ -83,60 +76,78 @@ void DB_Manager::getCourses(std::vector<Student>* students){
 	
 	}
 
-
+	sqlite3_finalize(stmt);
 	
 }
 
-void DB_Manager::insertStudent(const Student& student){
+void DB_Manager::insertStudent(const std::vector<Student> students){
 	// Use DB to insert student in student table
 	char* err_message;
-	std::string sql_query = "insert into students(student_id, student_name) values (" + std::string("'") + student.getId()+ "'"+ ","+ "'" + student.getName()+"');";
-	this->rc = sqlite3_exec(db, sql_query.c_str(), nullptr, nullptr, &err_message);	
-	if (rc != SQLITE_OK){
-		std::cout << "ERR: " << err_message << "\n";
+
+	sqlite3_exec(db, "BEGIN TRANSACTION;", nullptr, nullptr, &err_message);
+
+	sqlite3_stmt* std_stmt;
+	if (sqlite3_prepare_v2(db, "insert or replace into students(student_id,student_name) values(?,?);", -1, &std_stmt, nullptr) != SQLITE_OK){
+		std::cerr << "Failded to prepare student stmt during insert: " << sqlite3_errmsg(db) << "\n";
+		sqlite3_finalize(std_stmt);
+		return;
+	}
+
+	sqlite3_stmt* course_stmt;
+	if (sqlite3_prepare_v2(db, "insert or replace into courses(course_id,course_name,course_credits) values (?,?,?);", -1, &course_stmt, nullptr) != SQLITE_OK) {
+		std::cerr << "Failded to prepare course stmt during insert: " << sqlite3_errmsg(db) << "\n";
+		sqlite3_finalize(course_stmt);
+		return;
+	}
+
+	sqlite3_stmt* register_stmt;
+	if (sqlite3_prepare_v2(db, "insert or ignore into registrations(student_id,course_id) values (?,?);", -1, &register_stmt,nullptr) != SQLITE_OK){
+		std::cerr << "Failded to prepare registrations stmt during insert: " << sqlite3_errmsg(db) << "\n";
+		sqlite3_finalize(register_stmt);
+		return;
+	}
+	
+	for (const auto student:students){
+		
+		sqlite3_bind_text(std_stmt,1, student.getId().c_str(), -1, SQLITE_TRANSIENT);
+		sqlite3_bind_text(std_stmt,2,student.getName().c_str(), -1, SQLITE_TRANSIENT);
+		sqlite3_step(std_stmt);
+		sqlite3_reset(std_stmt);
+
+		for (const auto course:student.getCourses()){
+			sqlite3_bind_text(course_stmt, 1, course.getCourseId().c_str(), -1, SQLITE_TRANSIENT);
+			sqlite3_bind_text(course_stmt, 2, course.getCourseName().c_str(), -1, SQLITE_TRANSIENT);
+			sqlite3_bind_int(course_stmt, 3, course.getCredits());
+
+			sqlite3_step(course_stmt);
+			sqlite3_reset(course_stmt);
+
+
+			sqlite3_bind_text(register_stmt, 1, student.getId().c_str(), -1, SQLITE_TRANSIENT);
+			sqlite3_bind_text(register_stmt, 2, course.getCourseId().c_str(), -1, SQLITE_TRANSIENT);
+			sqlite3_step(register_stmt);
+			sqlite3_reset(register_stmt);
+		}
+	}
+
+
+	sqlite3_finalize(std_stmt);
+	sqlite3_finalize(course_stmt);
+	sqlite3_finalize(register_stmt);
+	sqlite3_exec(db, "COMMIT;", nullptr, nullptr, &err_message);
+}
+
+void DB_Manager::deleteStudent(std::string student_id){
+
+	std::string query = "delete from students where student_id = '" + student_id + "';";
+
+	char* err_message;
+
+	if (sqlite3_exec(db, query.c_str(), nullptr, nullptr, &err_message) != SQLITE_OK){
+		std::cerr << "ERR when deleting student: " << err_message << "\n";
 	}
 	else {
-		std::cout << "Inserted Student Successfully\n";
+		std::cout << "Student is successfully deleted\n";
 	}
-	sqlite3_free(err_message);
-
-}
-
-void DB_Manager::insertCourse(const Course& course){
-	// Use DB to insert course in course table
-	char* err_message;
-	std::string sql_query = "insert into courses(course_id, course_name, course_credits) values ('" + course.getCourseId() + "'" + "," + "'" + course.getCourseName() + "'" + ","  + std::to_string(course.getCredits()) + ");";
-
-	this->rc = sqlite3_exec(db, sql_query.c_str(), nullptr, nullptr, &err_message);
-	if (rc != SQLITE_OK){
-		std::cout << "ERR: " << err_message << "\n";
-	}
-	else{
-		std::cout << "Inserted Course Successfully\n";
-	}
-	sqlite3_free(err_message);
-
-
-	 
-}
-
-void DB_Manager::addStudentCourse(const Student& student){
-	// Use DB to add course and student details to course and student relation table
 	
-	char* err_message;
-	std:: string sql_query;
-
-	for (auto course: student.getCourses()){
-		sql_query = "insert into registrations(student_id, course_id) values ('" + student.getId() + "'" + "," + "'" + course.getCourseId() + "');";
-		rc = sqlite3_exec(db, sql_query.c_str(), nullptr, nullptr, &err_message);
-
-		if (rc != SQLITE_OK){
-			std::cout << "ERR: " << err_message << "\n";
-		}
-		else{
-			std::cout << "Added student and course relation\n";
-		}
-		sqlite3_free(err_message);
-
-	}
 }
