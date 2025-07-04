@@ -14,13 +14,11 @@ public:
 	~DB_Manager();
 	std::vector<Student> getStudents();
 	static int call_back_get_student(void* data, int argc, char** argv, char** azColName);
-	void getCourses(std::vector<Student>* students);
 	std::vector<Course> getCourses();
 	void insertStudent(std::vector<Student> students);
+	void insertCourse(std::vector<Course> courses);
+	int addCourseToStudent(std::string student_id, std::string course_id);
 	void deleteStudent(std::string student_id);
-
-	
-
 };
 
 #endif
