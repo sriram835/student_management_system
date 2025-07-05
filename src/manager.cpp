@@ -1,16 +1,21 @@
 #include "manager.h"
 #include <limits>
 #include "database_manager.h"
+#include <algorithm>
 
 std::vector<Student> Manager::students;
+std::vector<Course> Manager::courses;
 DB_Manager Manager::databaseManager;
 
 void Manager::execute(){
-    std::string choices_details = "1. Add student\n2. Add a course to student\n3. Display the student details\n4. Delete Student\n5. Exit\n\nEnter your Choice: ";
+    std::string choices_details = "1. Add student\n2. Add a course \n3. Register Student to a course\n4. Display the student details\n5. Delete Student\n6. Exit\n\nEnter your Choice: ";
     int choice;
 	
 
 	Manager::students = databaseManager.getStudents();
+	Manager::courses = databaseManager.getCourses();
+	databaseManager.coupleStudentCourse(students);
+
 
     while (1){
         std::cout << choices_details;
@@ -27,14 +32,17 @@ void Manager::execute(){
             addCourse();
             break;
 
-        case 3:
+	case 3:
+		registerStudentToCourse();
+		break;
+        case 4:
             displayDetails();
             break;
             
-	case 4:
+	case 5:
 		deleteStudent();
 		break;
-        case 5:
+        case 6:
             return;
 
         default:
@@ -59,25 +67,13 @@ void Manager::addStudent(){
         std::cout << std::endl;
         
 	students.push_back(Student(name,id));
+	databaseManager.insertStudent(students);
 
         std::cout << "\nStudent added!\n" << std::endl;
 
 }
 
 void Manager::addCourse(){
-    int count = 0;
-    int index;
-
-    for (Student student:students){
-        std::cout <<  "--------------------------------\n";
-	std::cout << "Index: " << count++ << "\n";
-	std::cout << "Student Name: " << student.getName() << std::endl;
-        std::cout << "Student ID: " << student.getId() << "\n--------------------------------\n";
-    }
-
-    std::cout << "\nEnter the index of the student: ";
-    std::cin >> index;
-    std::cout << std::endl;
 
 
     std::string course_name;
@@ -98,8 +94,55 @@ void Manager::addCourse(){
     std::cin >> course_credits;
     std::cout << std::endl;
     
-    students[index].addCourse(course_credits, course_name, course_id);
+	courses.push_back(Course(course_credits, course_name, course_id));
+	databaseManager.insertCourse(courses);
     std::cout << "Course Added!" << std::endl;
+}
+
+void Manager::registerStudentToCourse() {
+	int count = 0;
+	std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+
+	for (Student student:students){
+		std::cout << "-----------------------------\n";
+		std::cout << "Index: " << count++ << "\n";
+		std::cout << "Student Name: " << student.getName() << "\n";
+		std::cout << "Student Id: " << student.getId() << "\n";
+		std::cout << "-----------------------------\n\n";
+	}
+
+	int std_index;
+
+	std::cout << "Enter the index of student: ";
+	std::cin >> std_index;
+	std::cout << "\n";
+
+	count = 0;
+	for (Course course:courses){
+		std::cout << "-----------------------------\n";
+		std::cout << "Index: " << count++ << "\n";
+		std::cout << "Course Name: " << course.getCourseName() << "\n";
+		std::cout << "Course ID: " << course.getCourseId() << "\n";
+		std::cout << "Course Credits: " << course.getCredits() << "\n";
+		std::cout << "------------------------------\n\n";
+	}
+
+	int course_index;
+
+	std::cout << "Enter the index of Course: ";
+	std::cin >> course_index;
+	std::cout << "\n";
+
+	int result = databaseManager.addCourseToStudent(students[std_index].getId(), courses[course_index].getCourseId());
+
+	if (result != SQLITE_DONE){
+		return;
+	}
+
+
+	students[std_index].addCourse(courses[course_index].getCourseId());
+	std::cout << "Successfully registered Student to course\n";
+
 }
 
 void Manager::displayDetails(){
@@ -109,14 +152,20 @@ void Manager::displayDetails(){
         std::cout << "Student ID: " << student.getId() << std::endl;
         std::cout << "Number of Courses enrolled: " << student.getCourses().size() << std::endl;
 
-        for (Course course:student.getCourses()){
-            std::cout << "\t--------------------------" << std::endl;
-            std::cout << "\tCourse Name: " << course.getCourseName() << std::endl;
-            std::cout << "\tCourse Credits: " << course.getCredits() << std::endl;
-            std::cout << "\t--------------------------" << std::endl;
-        }
-        
-        std::cout << "------------------------------" << std::endl;
+		std::vector<std::string> course_ids = student.getCourses();
+		//Write the function to display  courses.
+		for (Course course:courses){
+			auto registrationsCheck = std::find(course_ids.begin(), course_ids.end(), course.getCourseId());
+			if (registrationsCheck != course_ids.end()){
+	 			std::cout << "\t---------------------------------------\n";
+	 			std::cout << "\tCourse ID: " << course.getCourseId() << "\n";
+	 			std::cout << "\tCourse Name: " << course.getCourseName() << "\n";
+	 			std::cout << "\tCourse Credits: " << course.getCredits() << "\n";
+	 			std::cout << "\t---------------------------------------\n";
+			}
+		}
+
+        std::cout << "------------------------------\n" << std::endl;
     }
 
 	std::cout << "\n";
@@ -147,7 +196,9 @@ void Manager::deleteStudent(){
 
 Manager::~Manager(){
 	databaseManager.insertStudent(students);
+	databaseManager.insertCourse(courses);
 }
+
 
 
 
