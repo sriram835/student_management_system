@@ -13,6 +13,7 @@ private:
 public:
     Student(std::string name, std::string id);
     void addCourse(std::string course_id);
+	void addCourseVector(std::vector<std::string>& new_course_ids);
     std::string getName() const;
     std::vector<std::string> getCourses() const;
     std::string getId() const;

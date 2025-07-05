@@ -19,6 +19,7 @@ public:
 	void insertCourse(std::vector<Course> courses);
 	int addCourseToStudent(std::string student_id, std::string course_id);
 	void deleteStudent(std::string student_id);
+	void coupleStudentCourse(std::vector<Student>& students);
 };
 
 #endif

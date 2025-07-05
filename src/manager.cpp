@@ -1,6 +1,7 @@
 #include "manager.h"
 #include <limits>
 #include "database_manager.h"
+#include <algorithm>
 
 std::vector<Student> Manager::students;
 std::vector<Course> Manager::courses;
@@ -13,6 +14,8 @@ void Manager::execute(){
 
 	Manager::students = databaseManager.getStudents();
 	Manager::courses = databaseManager.getCourses();
+	databaseManager.coupleStudentCourse(students);
+
 
     while (1){
         std::cout << choices_details;
@@ -149,8 +152,20 @@ void Manager::displayDetails(){
         std::cout << "Student ID: " << student.getId() << std::endl;
         std::cout << "Number of Courses enrolled: " << student.getCourses().size() << std::endl;
 
+		std::vector<std::string> course_ids = student.getCourses();
 		//Write the function to display  courses.
-        std::cout << "------------------------------" << std::endl;
+		for (Course course:courses){
+			auto registrationsCheck = std::find(course_ids.begin(), course_ids.end(), course.getCourseId());
+			if (registrationsCheck != course_ids.end()){
+	 			std::cout << "\t---------------------------------------\n";
+	 			std::cout << "\tCourse ID: " << course.getCourseId() << "\n";
+	 			std::cout << "\tCourse Name: " << course.getCourseName() << "\n";
+	 			std::cout << "\tCourse Credits: " << course.getCredits() << "\n";
+	 			std::cout << "\t---------------------------------------\n";
+			}
+		}
+
+        std::cout << "------------------------------\n" << std::endl;
     }
 
 	std::cout << "\n";
@@ -183,6 +198,7 @@ Manager::~Manager(){
 	databaseManager.insertStudent(students);
 	databaseManager.insertCourse(courses);
 }
+
 
 
 

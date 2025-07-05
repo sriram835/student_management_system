@@ -3,6 +3,7 @@
 #include <string>
 #include <iostream>
 #include <vector>
+#include <unordered_map>
 
 
 DB_Manager::DB_Manager(){
@@ -168,4 +169,34 @@ void DB_Manager::deleteStudent(std::string student_id){
 		std::cout << "Student is successfully deleted\n";
 	}
 	
+}
+
+void DB_Manager::coupleStudentCourse(std::vector<Student>& students){
+	std::unordered_map<std::string,std::vector<std::string>> student_course_map;
+	
+	std::string err_msg;
+	std:: string query = "select student_id, course_id from registrations;";
+	
+	sqlite3_stmt* stmt;
+
+	if (sqlite3_prepare_v2(db,query.c_str(),-1,&stmt,nullptr) != SQLITE_OK){
+		std::cout << "Failed preparing stmt to get registrations: " << sqlite3_errmsg(db) << "\n";
+		return;
+	}
+
+	std::string student_id;
+	std::string course_id;
+
+	while (sqlite3_step(stmt) == SQLITE_ROW){
+		student_id = reinterpret_cast<const char*>(sqlite3_column_text(stmt,0));
+		course_id = reinterpret_cast<const char*>(sqlite3_column_text(stmt,1));
+		student_course_map[student_id].push_back(course_id);
+
+	}
+
+	for (Student& student:students){
+		student.addCourseVector(student_course_map[student.getId()]);
+	}
+
+	sqlite3_finalize(stmt);
 }
